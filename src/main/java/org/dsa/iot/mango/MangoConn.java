@@ -19,6 +19,7 @@ public class MangoConn {
     private Node node;
     private ApiClient client;
     private MangoDSLApi api;
+    private boolean ConnStablished;
 
     public MangoDSLApi getApi() {
         return api;
@@ -56,6 +57,8 @@ public class MangoConn {
 
     //set up the API client and the Mango for Java DSL API framework
     private void init() {
+		client = null;
+		api = null;
         ApiClient apiClient = new ApiClient();
         String path = node.getAttribute("url").getString();
         client = apiClient.setBasePath(path);
@@ -64,14 +67,17 @@ public class MangoConn {
     }
 
     //access point to start the link connection
-    public void start() {
+    public boolean start() {
         init();
         setLogin();
+        return ConnStablished;
     }
 
     //log into the server and establish a connection, saving the cookie for session access
     private void setLogin() {
+		ConnStablished = true;
         try {
+			
             String password = String.valueOf(node.getPassword());
 
             ResponseEntityUserModel user = api.login(node.getAttribute("username").getString(), password, false);
@@ -108,12 +114,14 @@ public class MangoConn {
         } catch (ApiException e) {
             LOGGER.error("setLogin\n\tcode: {}\n\tmessage: {}\n\theader: {}\n\tbody: {}\n{}",
                     e.getCode(), e.getMessage(), e.getResponseHeaders(), e.getResponseBody(), e);
-            Node parent = node.getParent();
-            parent.removeChild(node, false);
+            ConnStablished = false;
+            //Node parent = node.getParent();
+            //parent.removeChild(node, false);
         } catch (Exception e) {
             LOGGER.error("{}", e);
-            Node parent = node.getParent();
-            parent.removeChild(node, false);
+            ConnStablished = false;
+            //Node parent = node.getParent();
+            //parent.removeChild(node, false);
         }
     }
 

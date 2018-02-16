@@ -19,7 +19,8 @@ public class MangoConn {
     private Node node;
     private ApiClient client;
     private MangoDSLApi api;
-    private boolean ConnStablished;
+    private boolean connStablished;
+    private boolean isInit;
 
     public MangoDSLApi getApi() {
         return api;
@@ -53,12 +54,12 @@ public class MangoConn {
     public MangoConn(MangoLink link, Node child) {
         this.link = link;
         this.node = child;
+        isInit = false;
     }
 
     //set up the API client and the Mango for Java DSL API framework
     private void init() {
-		client = null;
-		api = null;
+		isInit = true;
         ApiClient apiClient = new ApiClient();
         String path = node.getAttribute("url").getString();
         client = apiClient.setBasePath(path);
@@ -68,16 +69,17 @@ public class MangoConn {
 
     //access point to start the link connection
     public boolean start() {
-        init();
+        if (!isInit) {
+			init();
+		}
         setLogin();
-        return ConnStablished;
+        return connStablished;
     }
 
     //log into the server and establish a connection, saving the cookie for session access
     private void setLogin() {
-		ConnStablished = true;
+		connStablished = true;
         try {
-			
             String password = String.valueOf(node.getPassword());
 
             ResponseEntityUserModel user = api.login(node.getAttribute("username").getString(), password, false);
@@ -114,12 +116,12 @@ public class MangoConn {
         } catch (ApiException e) {
             LOGGER.error("setLogin\n\tcode: {}\n\tmessage: {}\n\theader: {}\n\tbody: {}\n{}",
                     e.getCode(), e.getMessage(), e.getResponseHeaders(), e.getResponseBody(), e);
-            ConnStablished = false;
+            connStablished = false;
             //Node parent = node.getParent();
             //parent.removeChild(node, false);
         } catch (Exception e) {
             LOGGER.error("{}", e);
-            ConnStablished = false;
+            connStablished = false;
             //Node parent = node.getParent();
             //parent.removeChild(node, false);
         }

@@ -160,47 +160,53 @@ public class MangoFolder {
                 }
                 synchronized (nodesToUpdate) {
                     for (Node no : nodesToUpdate) {
+						String b = "";
                         try {
                             Node original = conn.getClientNode();
                             conn.setClientNode(no);
                             String xid = no.getAttribute("xid").getString();
                             ResponseEntityRealTimeModel rtm = api.get(xid);
-                            String b = rtm.getBody().toString();
-                            int beginIndex = b.indexOf("type: ");
+                            b = rtm.getBody().toString();
+                            int beginIndex = b.indexOf("status: ");
                             int endIndex = b.indexOf("\n", beginIndex);
-                            String type = b.substring(beginIndex + 6, endIndex);
-                            beginIndex = b.indexOf("value: ");
-                            endIndex = b.indexOf("\n", beginIndex);
-                            String value = b.substring(beginIndex + 7, endIndex);
-                            Value val = null;
-                            switch (type) {
-                                case "Numeric":
-                                    Float num = Float.valueOf(value);
-                                    val = new Value(num);
-                                    break;
-                                case "Binary":
-                                    Boolean bool = Boolean.valueOf(value);
-                                    val = new Value(bool);
-                                    break;
-                                case "Multistate":
-                                	Integer myInt = Integer.parseInt(value);
-                                	val = new Value(myInt);
-                                    break;
-                                case "Image":
-                                    LOGGER.warn("mangoFolder:RealTimeModel - unimplemented data type: IMAGE");
-                                    break;
-                                case "Alphanumeric":
-                                    String s = String.valueOf(value);
-                                    val = new Value(s);
-                                    break;
+                            String status = b.substring(beginIndex + 8, endIndex);
+                            if (status.equals("OK")) {
+								beginIndex = b.indexOf("type: ");
+								endIndex = b.indexOf("\n", beginIndex);
+								String type = b.substring(beginIndex + 6, endIndex);
+								beginIndex = b.indexOf("value: ");
+								endIndex = b.indexOf("\n", beginIndex);
+								String value = b.substring(beginIndex + 7, endIndex);
+								Value val = null;
+								switch (type) {
+									case "Numeric":
+										Float num = Float.valueOf(value);
+										val = new Value(num);
+										break;
+									case "Binary":
+										Boolean bool = Boolean.valueOf(value);
+										val = new Value(bool);
+										break;
+									case "Multistate":
+										Integer myInt = Integer.parseInt(value);
+										val = new Value(myInt);
+										break;
+									case "Image":
+										LOGGER.warn("mangoFolder:RealTimeModel - unimplemented data type: IMAGE");
+										break;
+									case "Alphanumeric":
+										String s = String.valueOf(value);
+										val = new Value(s);
+										break;
+								}
+								no.setValue(val);
                             }
-                            no.setValue(val);
                             conn.setClientNode(original);
                         } catch (ApiException e) {
                             LOGGER.error("Data point has no data - {}", no.getDisplayName());
                             no.setValue(null);
                         } catch (NumberFormatException e) {
-                            LOGGER.error("Point Update error - {}", e);
+                            LOGGER.error("Point Update error - {}\n\nBody contents\n {}\n", e, b);
                             no.setValue(null);
                         }
                     }

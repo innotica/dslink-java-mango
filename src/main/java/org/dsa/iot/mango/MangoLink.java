@@ -12,9 +12,6 @@ import org.dsa.iot.dslink.node.value.ValueType;
 import org.dsa.iot.dslink.util.handler.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-//Timer utilities to initialize the DSLink connections
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MangoLink {
 
@@ -54,7 +51,8 @@ public class MangoLink {
         if (node.getChildren() == null) return;
         for (Node child: node.getChildren().values()) {
             if (child.getAttribute("url") != null) {
-                initMangoConn conn = new initMangoConn(this, child);
+				updateRate = child.getAttribute("updateRate").getNumber().intValue();
+                MangoConn conn = new MangoConn(MangoLink.this, child);
                 conn.start();
             } else if (!"defs".equals(child.getName())
                         && child.getAction() == null) {
@@ -92,36 +90,9 @@ public class MangoLink {
             b.setAttribute("updateRate", new Value(updateRate));
             Node child = b.build();
             LOGGER.info("Base URL set - {}", child.getAttribute("url"));
-            initMangoConn conn = new initMangoConn(MangoLink.this, child);
+            MangoConn conn = new MangoConn(MangoLink.this, child);
             conn.start();
         }
     }
-    
-    private class initMangoConn extends TimerTask {
-		private Timer timer;
-		MangoConn conn;
-		MangoLink link;
-		Node child;
-		
-		public initMangoConn(MangoLink link, Node child) {
-			this.link = link;
-			this.child = child;
-		}
-		
-		public void start() {
-			conn = new MangoConn(this.link, this.child);
-			timer = new Timer();
-			timer.schedule(this, 100, 3000);
-		}
-		
-		@Override
-        public void run() {
-			LOGGER.info("Trying to connect...");
-			if(conn.start()) {
-				this.cancel();
-			} else {
-				LOGGER.error("Connection not found. Waiting...");
-			}
-		}
-	}
+
 }

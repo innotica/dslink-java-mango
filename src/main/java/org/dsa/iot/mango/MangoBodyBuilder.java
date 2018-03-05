@@ -244,7 +244,8 @@ public class MangoBodyBuilder {
         final DataPointSummaryModel model = new DataPointSummaryModel();
         final String name = ob.get("name");
 
-        NodeBuilder b = node.createChild((String) ob.get("xid"), false);
+        //NodeBuilder b = node.createChild((String) ob.get("xid"), false); //Doesn't help creating hierarchy structure for relativization model
+        NodeBuilder b = node.createChild(name, false);
         {
             b.setSerializable(false);
             b.setDisplayName(name);
@@ -286,8 +287,24 @@ public class MangoBodyBuilder {
         pointSetter(xid, child);
         setActions(child);
         GetHistory.initAction(child, new Db(xid, api));
+        //initGetHistoryAction(child, xid);
         return model;
     }
+
+    /* Unusable because of new GetHistory constructor
+    //fix to allow getting node history without needing the node name to be equal to xid string
+    private void initGetHistoryAction(Node node, String xid) {
+		Db db = new Db(xid, api);
+		GetHistory gh = new GetHistory(xid, db);
+		Action a =  new Action(Permission.READ, gh);
+        //Action a =  new Action(Permission.READ, new GetHistory(node, new Db(xid, api)));
+        a.setHidden(true);
+
+        NodeBuilder b = node.createChild("getHistory", "getHistory");
+        b.setDisplayName("Get History");
+        b.setAction(a);
+        b.build();
+    }*/
 
     //helper method setting point values
     private void pointSetter(String xid, Node node) {

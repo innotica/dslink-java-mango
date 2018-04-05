@@ -22,11 +22,13 @@ public class Db extends Database {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Db.class);
     private final MangoDSLApi api;
+    private final String path;
 
     //set the global variables
     public Db(String name, MangoDSLApi api) {
         super(name, null);
         this.api = api;
+        path = name;
     }
 
     @Override
@@ -40,7 +42,7 @@ public class Db extends Database {
         try {
             Date f = new Date(from);
             Date t = new Date(to);
-            ResponseEntityJsonArrayStream[] rejas = api.getPointValues(path, f, t, null, null, null);
+            ResponseEntityJsonArrayStream[] rejas = api.getPointValues(this.path, f, t, null, null, null); //forcing path to xid instead of node name
             ResponseEntityJsonArrayStream j = rejas[0];
             JsonArrayStream jas = j.getBody();
             List<JsonObject> list = jas.getJsonArray();

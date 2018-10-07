@@ -70,6 +70,7 @@ public class MangoLink {
         act.addParameter(new Parameter("Password", ValueType.STRING).setPlaceHolder("admin")
                 .setEditorType(EditorType.PASSWORD));
         act.addParameter(new Parameter("Default Polling Interval", ValueType.NUMBER, new Value(updateRate)));
+        act.addParameter(new Parameter("Api Version", ValueType.NUMBER, new Value(3.5)));
         return act;
     }
 
@@ -83,11 +84,13 @@ public class MangoLink {
             String username = event.getParameter("Username", ValueType.STRING).getString();
             String pw = event.getParameter("Password", ValueType.STRING).getString();
             updateRate = event.getParameter("Default Polling Interval", ValueType.NUMBER).getNumber().intValue();
+            double apiVer = event.getParameter("Api Version", ValueType.NUMBER).getNumber().doubleValue();
             NodeBuilder b = node.createChild(name, false);
             b.setAttribute("url", new Value(url));
             b.setAttribute("username", new Value(username));
             b.setPassword(pw.toCharArray());
             b.setAttribute("updateRate", new Value(updateRate));
+            b.setAttribute("apiVer", new Value(apiVer));
             Node child = b.build();
             LOGGER.info("Base URL set - {}", child.getAttribute("url"));
             MangoConn conn = new MangoConn(MangoLink.this, child);

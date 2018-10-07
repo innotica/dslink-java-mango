@@ -121,28 +121,14 @@ public class MangoConn {
 					LOGGER.info("Setting Cookie: " + cookie);
 				}
 
-				String xsrfToken = "";
-				for(String cookie : client.getResponseHeaders().get("Set-Cookie")){
-					LOGGER.info("Got cookie: " + cookie);
-					if(cookie.contains("XSRF-TOKEN")){
-						String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
-						String token = xsrfCookie.split("=")[1];
-						xsrfToken = token;
-						LOGGER.info("Setting XSRF Token: " + token);
-						client.addDefaultHeader("X-XSRF-TOKEN", token);
-					}
+				double apiVer = node.getAttribute("apiVer").getNumber().doubleValue();
+				LOGGER.info("Mango API version: {}", apiVer);
+				boolean ret = setHeaderCookie(apiVer);
 
-					if(cookie.contains("MANGO")) {
-						String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
-
-						String key = xsrfCookie.split("=")[0];
-						String value = xsrfCookie.split("=")[1];
-						client.setCookie(key + "=" + value + ";" + "XSRF-TOKEN=" + xsrfToken);
-					}
+				if(ret) {
+					LOGGER.info("{} logged in", node.getAttribute("username"));
+					initMangoFolder();
 				}
-
-				LOGGER.info("{} logged in", node.getAttribute("username"));
-				initMangoFolder();
 				this.cancel();
 			} catch (ApiException e) {
 				LOGGER.error("setLogin\n\tcode: {}\n\tmessage: {}\n\theader: {}\n\tbody: {}\n{}",
@@ -157,6 +143,60 @@ public class MangoConn {
 				//parent.removeChild(node, false);
 			}
 		}
+	}
+
+	boolean setHeaderCookie(double apiver) {
+		boolean ret = true;
+		if(apiver < 3.4) {
+			String xsrfToken = "";
+			String key = "";
+			String value = "";
+			for(String cookie : client.getResponseHeaders().get("Set-Cookie")) {
+				LOGGER.info("Got cookie: " + cookie);
+				if(cookie.contains("XSRF-TOKEN")){
+					String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
+					xsrfToken = xsrfCookie.split("=")[1];
+					LOGGER.info("Setting XSRF Token: " + xsrfToken);
+				}
+
+				if(cookie.contains("MANGO")) {
+					String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
+					key = xsrfCookie.split("=")[0];
+					value = xsrfCookie.split("=")[1];
+				}
+			}
+            client.addDefaultHeader("X-XSRF-TOKEN", xsrfToken);
+			client.setCookie(key + "=" + value + ";" + "XSRF-TOKEN=" + xsrfToken);
+		} else if(apiver < 3.6) {
+			String xsrfToken = "";
+			String key = "";
+			String value = "";
+			for(String cookie : client.getResponseHeaders().get("Set-Cookie")) {
+				LOGGER.info("Got cookie: " + cookie);
+				if(cookie.contains("XSRF-TOKEN")){
+					String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
+					String[] tokenSplit = xsrfCookie.split("=");
+					if(tokenSplit.length == 2) {
+						xsrfToken = tokenSplit[1];
+						LOGGER.info("Setting XSRF Token: " + xsrfToken);
+					}
+				}
+
+				if(cookie.contains(".node0")) {
+					String xsrfCookie = cookie.split(";")[0].replaceAll("\\[", "");
+                    key = xsrfCookie.split("=")[0];
+					value = xsrfCookie.split("=")[1];
+				}
+			}
+			client.addDefaultHeader("X-XSRF-TOKEN", xsrfToken);
+			client.setCookie(key + "=" + value + ";" + "XSRF-TOKEN=" + xsrfToken);
+		} else {
+			LOGGER.error("Version not supported: {}. Removing connection...", apiver);
+			ret = false;
+			Node parent = node.getParent();
+            parent.removeChild(node, false);
+    	}
+    	return ret;
 	}
 
 }
